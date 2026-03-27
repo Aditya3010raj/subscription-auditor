@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import * as SecureStore from 'expo-secure-store';
 import { Database } from './database.types';
 
 // 1. Get the keys from either Expo (Mobile) or Next.js (Web)
@@ -7,7 +8,11 @@ const supabaseUrl =
   process.env.EXPO_PUBLIC_SUPABASE_URL || 
   process.env.NEXT_PUBLIC_SUPABASE_URL || 
   ''; 
-
+const ExpoSecureStoreAdapter = {
+  getItem: (key: string) => SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+};
 const supabaseAnonKey = 
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
@@ -19,4 +24,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // 3. Initialize the client with the Database types
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: ExpoSecureStoreAdapter as any,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});
